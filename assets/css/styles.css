@@ -1,0 +1,16 @@
+/* Main Styles */
+:root {
+  --primary-color: #0066cc;
+  --secondary-color: #f5f5f5;
+}
+
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  margin: 0;
+  padding: 0;
+  background-color: var(--secondary-color);
+}
+
+* {
+  box-sizing: border-box;
+}
