@@ -103,10 +103,10 @@ USE_I18N = True
 USE_TZ = True
 
 # Static files
-# Serve static files at the application root so existing index.html and pages/ links work.
-STATIC_URL = '/'
+# Serve static files under /static/ so they don't conflict with the root URL
+STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
-# Collect static from assets/ and pages/ so paths like /assets/... and /pages/... resolve
+# Collect static from assets/ and pages/ so paths like /static/assets/... and /static/pages/... resolve
 STATICFILES_DIRS = [BASE_DIR / 'assets', BASE_DIR / 'pages']
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
