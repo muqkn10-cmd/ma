@@ -66,7 +66,8 @@ ROOT_URLCONF = 'toxerp.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / 'templates'],
+        # Include repo templates directory and repository root so index.html/pages are found
+        'DIRS': [BASE_DIR / 'templates', BASE_DIR],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -102,8 +103,11 @@ USE_I18N = True
 USE_TZ = True
 
 # Static files
-STATIC_URL = '/static/'
+# Serve static files at the application root so existing index.html and pages/ links work.
+STATIC_URL = '/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
+# Collect static from assets/ and pages/ so paths like /assets/... and /pages/... resolve
+STATICFILES_DIRS = [BASE_DIR / 'assets', BASE_DIR / 'pages']
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # Media files
