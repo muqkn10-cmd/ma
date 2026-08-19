@@ -2,12 +2,16 @@
 URL configuration for toxerp project.
 """
 from django.contrib import admin
-from django.urls import path, include
+from django.urls import path, include, re_path
 from django.conf import settings
 from django.conf.urls.static import static
-from django.views.generic import TemplateView
+from django.views.generic import TemplateView, RedirectView
 
 urlpatterns = [
+    # Redirect legacy asset/page requests to the static URL so old HTML works without edits
+    path('assets/<path:path>', RedirectView.as_view(url='/static/assets/%(path)s', permanent=False)),
+    path('pages/<path:path>', RedirectView.as_view(url='/static/pages/%(path)s', permanent=False)),
+
     path('admin/', admin.site.urls),
     path('api/', include('rest_framework.urls')),
     # Serve the repository's index.html at the site root
