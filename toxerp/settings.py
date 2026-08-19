@@ -16,9 +16,20 @@ SECRET_KEY = os.environ.get(
 )
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ.get('TOX_DEBUG', '1').lower() in ('1', 'true', 'yes')
+# Default to False in deployments; enable by setting TOX_DEBUG=1 or TOX_DEBUG=true
+DEBUG = os.environ.get('TOX_DEBUG', '0').lower() in ('1', 'true', 'yes')
 
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '0.0.0.0']
+# ALLOWED_HOSTS can be configured via TOX_ALLOWED_HOSTS or ALLOWED_HOSTS env var
+# Provide a comma-separated list, e.g. TOX_ALLOWED_HOSTS=example.com,sub.example.com
+_raw_hosts = os.environ.get('TOX_ALLOWED_HOSTS') or os.environ.get('ALLOWED_HOSTS')
+if _raw_hosts:
+    ALLOWED_HOSTS = [h.strip() for h in _raw_hosts.split(',') if h.strip()]
+else:
+    ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '0.0.0.0']
+
+# When behind a proxy (Railway, Heroku, etc.) the forwarded proto/header should be respected
+USE_X_FORWARDED_HOST = True
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 # This is the key setting that Railway's Nixpacks requires!
 WSGI_APPLICATION = 'toxerp.wsgi.application'
