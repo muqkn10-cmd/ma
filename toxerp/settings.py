@@ -10,22 +10,24 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get(
-    'DJANGO_SECRET_KEY',
-    'django-insecure-dev-key-for-local-development-only-change-in-production'
-)
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'dev-only-insecure-key')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-# Default to False in deployments; enable by setting TOX_DEBUG=1 or TOX_DEBUG=true
-DEBUG = os.environ.get('TOX_DEBUG', '0').lower() in ('1', 'true', 'yes')
+# Explicit behaviour: DEBUG must be set to '1' to enable debug mode in production
+DEBUG = os.environ.get('TOX_DEBUG', '0') == '1'
 
 # ALLOWED_HOSTS can be configured via TOX_ALLOWED_HOSTS or ALLOWED_HOSTS env var
-# Provide a comma-separated list, e.g. TOX_ALLOWED_HOSTS=example.com,sub.example.com
+# Default includes the current Railway hostname and a wildcard for *.up.railway.app
 _raw_hosts = os.environ.get('TOX_ALLOWED_HOSTS') or os.environ.get('ALLOWED_HOSTS')
 if _raw_hosts:
     ALLOWED_HOSTS = [h.strip() for h in _raw_hosts.split(',') if h.strip()]
 else:
-    ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '0.0.0.0']
+    ALLOWED_HOSTS = [
+        'web-production-181d1.up.railway.app',
+        'localhost',
+        '127.0.0.1',
+        '.up.railway.app',  # allow Railway subdomains
+    ]
 
 # When behind a proxy (Railway, Heroku, etc.) the forwarded proto/header should be respected
 USE_X_FORWARDED_HOST = True
