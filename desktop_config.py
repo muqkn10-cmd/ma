@@ -50,13 +50,11 @@ APP_SLUG = str(os.environ.get("TOX_APP_SLUG") or setting("app_slug", "toxlite"))
 
 def _local_host(value):
     host = str(value or "").strip() or "127.0.0.1"
-    # Allow explicit 0.0.0.0 and other valid IPs to support production binding when provided
-    if host in {"localhost", "127.0.0.1", "::1", "0.0.0.0"}:
+    if host in {"localhost", "127.0.0.1", "::1"}:
         return host
     try:
-        # If user supplied a valid IP address, return it (allows non-loopback explicit hosts)
-        ipaddress.ip_address(host.strip("[]"))
-        return host
+        if ipaddress.ip_address(host.strip("[]")).is_loopback:
+            return host
     except ValueError:
         pass
     return "127.0.0.1"

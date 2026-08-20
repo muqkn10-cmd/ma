@@ -13,28 +13,17 @@ HEALTH_TIMEOUT_SECONDS = 2
 
 def local_host(value):
     host = str(value or "").strip() or "127.0.0.1"
-    return host
+    return host if host in {"127.0.0.1", "localhost", "::1"} else "127.0.0.1"
 
 
 def configure_environment(args):
     os.environ.setdefault("DJANGO_SETTINGS_MODULE", "toxerp.settings")
-    # If a platform (eg. Railway) provides PORT, prefer it and allow binding to 0.0.0.0
-    env_port = os.environ.get("PORT")
-    if env_port:
-        try:
-            args.port = int(env_port)
-        except ValueError:
-            pass
-    # Prefer explicit HOST env var, otherwise use 0.0.0.0 when a PORT was provided
-    args.host = os.environ.get("HOST", args.host)
-    if not args.host:
-        args.host = "0.0.0.0" if env_port else "127.0.0.1"
-    # Set TOX_* env vars so desktop_config and settings.py pick them up
+    args.host = local_host(args.host)
     os.environ["TOX_PORT"] = str(args.port)
     os.environ["TOX_HOST"] = args.host
     os.environ["TOX_BIND_HOST"] = args.host
     os.environ["TOX_LAN_ACCESS"] = "0"
-
+    
 
 def run_migrations():
     import django
@@ -46,11 +35,7 @@ def run_migrations():
 
 
 def public_base_url(args):
-    # If bound to 0.0.0.0, show the loopback address for user-friendly URLs
-    host_for_url = local_host(args.host)
-    if host_for_url == "0.0.0.0":
-        host_for_url = "127.0.0.1"
-    return f"http://{host_for_url}:{args.port}"
+    return f"http://{local_host(args.host)}:{args.port}"
 
 
 def access_urls(args):
@@ -88,8 +73,7 @@ def stop_if_server_already_running(args):
     if tox_backend_is_healthy(base_url):
         print_access_urls(args, already_running=True)
         return True
-    # Always check loopback first; if the host is 0.0.0.0 the binding is global but loopback is reachable
-    if port_is_open("127.0.0.1", args.port) or port_is_open(local_host(args.host), args.port):
+    if port_is_open(local_host(args.host), args.port):
         print(
             f"Port {args.port} is already in use, but TOX health check did not answer at {base_url}/api/health/.",
             flush=True,
@@ -113,22 +97,12 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description="Start the TOX Lite local Django backend.")
     parser.add_argument("--host", default=os.environ.get("TOX_HOST", "127.0.0.1"))
     parser.add_argument("--port", type=int, default=int(os.environ.get("TOX_PORT", "8765")))
-    parser.add_argument(
-        "--lan",
-        dest="lan",
-        action="store_true",
-        default=False,
-        help="Compatibility option; TOX now starts with the local computer URL only.",
-    )
-    parser.add_argument(
-        "--local-only",
-        dest="lan",
-        action="store_false",
-        help="Bind only to this computer.",
-    )
+    parser.add_argument("--lan", dest="lan", action="store_true", default=False, help="Compatibility option; TOX now starts with the local computer URL only.")
+    parser.add_argument("--local-only", dest="lan", action="store_false", help="Bind only to this computer.")
     parser.add_argument("--no-migrate", action="store_true", help="Skip automatic migrations.")
     parser.add_argument("--no-wait", action="store_true", help="Compatibility flag used by the desktop launcher.")
     args = parser.parse_args(argv)
+    args.lan = False
 
     os.chdir(ROOT)
     configure_environment(args)
@@ -142,3 +116,4 @@ def main(argv=None):
 
 if __name__ == "__main__":
     raise SystemExit(main())
+
