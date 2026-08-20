@@ -23,6 +23,7 @@ if _raw_hosts:
     ALLOWED_HOSTS = [h.strip() for h in _raw_hosts.split(',') if h.strip()]
 else:
     ALLOWED_HOSTS = [
+        'moq.up.railway.app',  # this project's Railway public domain
         'web-production-181d1.up.railway.app',
         'localhost',
         '127.0.0.1',
@@ -81,12 +82,31 @@ TEMPLATES = [
 ]
 
 # Database
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+# - Default: SQLite (local / desktop mode).
+# - Production: if DATABASE_URL is set (Railway/Postgres), use PostgreSQL so
+#   data persists across restarts/deploys (Railway's filesystem is ephemeral).
+_database_url = os.environ.get('DATABASE_URL')
+if _database_url:
+    import urllib.parse as _urlparse
+
+    _db = _urlparse.urlparse(_database_url)
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': _db.path.lstrip('/'),
+            'USER': _db.username,
+            'PASSWORD': _db.password,
+            'HOST': _db.hostname,
+            'PORT': _db.port or 5432,
+        }
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
@@ -106,8 +126,13 @@ USE_TZ = True
 # Serve static files under /static/ so they don't conflict with the root URL
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
-# Collect static from assets/ and pages/ so paths like /static/assets/... and /static/pages/... resolve
-STATICFILES_DIRS = [BASE_DIR / 'assets', BASE_DIR / 'pages']
+# Collect static from assets/ so paths like /static/assets/... resolve.
+# The "assets" prefix preserves the directory level so the collected files keep
+# the /assets/... path that the templates reference (a bare path here would
+# strip the prefix and collect them as /static/css/..., causing 404s).
+STATICFILES_DIRS = [
+    ('assets', BASE_DIR / 'assets'),
+]
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # Media files
